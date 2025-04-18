@@ -1,0 +1,1283 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crotolandia Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6c5ce7;
+            --secondary: #a29bfe;
+            --accent: #fd79a8;
+            --dark: #2d3436;
+            --light: #f5f6fa;
+            --success: #00b894;
+            --warning: #fdcb6e;
+            --danger: #d63031;
+            --sidebar-width: 250px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--light);
+            color: var(--dark);
+            overflow-x: hidden;
+        }
+
+        /* Loader */
+        .loader-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s, visibility 0.5s;
+        }
+
+        .loader-container.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .loader {
+            width: 100px;
+            height: 100px;
+            border: 10px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-bottom: 20px;
+        }
+
+        .loader-logo {
+            width: 120px;
+            height: 120px;
+            margin-bottom: 20px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        /* Layout */
+        .dashboard {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: linear-gradient(180deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 20px 0;
+            position: fixed;
+            height: 100vh;
+            transition: transform 0.3s ease;
+            z-index: 100;
+            box-shadow: 5px 0 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 20px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            margin-bottom: 20px;
+        }
+
+        .sidebar-logo {
+            width: 40px;
+            height: 40px;
+            margin-right: 10px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .sidebar-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            padding: 0 15px;
+        }
+
+        .sidebar-menu li {
+            margin-bottom: 5px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sidebar-menu li::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            transition: left 0.3s ease;
+        }
+
+        .sidebar-menu li:hover::before {
+            left: 0;
+        }
+
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 1;
+        }
+
+        .sidebar-menu a:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px);
+        }
+
+        .sidebar-menu a.active {
+            background: rgba(255, 255, 255, 0.2);
+            font-weight: bold;
+        }
+
+        .sidebar-menu i {
+            margin-right: 10px;
+            font-size: 1.1rem;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            padding: 20px;
+            transition: margin-left 0.3s ease;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            color: var(--primary);
+            position: relative;
+        }
+
+        .header h1::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 0;
+            width: 50px;
+            height: 3px;
+            background: var(--accent);
+            border-radius: 3px;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--accent);
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .user-avatar:hover {
+            transform: scale(1.1);
+        }
+
+        /* Content Sections */
+        .content-section {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Stickers Section */
+        .sticker-container {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        .sticker-upload {
+            flex: 1;
+            min-width: 300px;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .sticker-upload:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .sticker-upload h2 {
+            margin-bottom: 20px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .upload-area {
+            border: 2px dashed var(--secondary);
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary);
+            background: rgba(108, 92, 231, 0.05);
+        }
+
+        .upload-area i {
+            font-size: 3rem;
+            color: var(--secondary);
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .upload-area:hover i {
+            color: var(--primary);
+            transform: scale(1.1);
+        }
+
+        .upload-area p {
+            margin-bottom: 10px;
+            color: var(--dark);
+        }
+
+        .upload-area small {
+            color: #7f8c8d;
+        }
+
+        #imagePreview {
+            max-width: 100%;
+            max-height: 300px;
+            display: none;
+            margin: 20px auto;
+            border-radius: 5px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .generate-btn {
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: 0 auto;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3);
+        }
+
+        .generate-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 7px 20px rgba(108, 92, 231, 0.4);
+        }
+
+        .generate-btn:active {
+            transform: translateY(1px);
+        }
+
+        .generate-btn i {
+            font-size: 1.2rem;
+        }
+
+        .sticker-gallery {
+            flex: 2;
+            min-width: 300px;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .gallery-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            color: var(--primary);
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .gallery-item {
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            aspect-ratio: 1/1;
+        }
+
+        .gallery-item:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* Forum Section */
+        .forum-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+
+        .forum-header {
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .forum-logo {
+            width: 40px;
+            height: 40px;
+        }
+
+        .forum-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .forum-nav {
+            display: flex;
+            background: #f1f2f6;
+            padding: 10px 20px;
+            gap: 10px;
+            overflow-x: auto;
+        }
+
+        .forum-nav-btn {
+            background: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .forum-nav-btn:hover {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .forum-nav-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .thread-list {
+            padding: 20px;
+        }
+
+        .thread {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            transition: all 0.3s ease;
+        }
+
+        .thread:hover {
+            background: #f8f9fa;
+            transform: translateX(5px);
+        }
+
+        .thread-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .thread-meta {
+            display: flex;
+            gap: 15px;
+            font-size: 0.8rem;
+            color: #7f8c8d;
+        }
+
+        .thread-stats {
+            display: flex;
+            gap: 10px;
+        }
+
+        .thread-stats span {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .new-thread-btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 20px auto;
+            transition: all 0.3s ease;
+        }
+
+        .new-thread-btn:hover {
+            background: #ff6b9d;
+            transform: translateY(-2px);
+        }
+
+        /* Projects Section */
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+        }
+
+        .project-card {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .project-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .project-image {
+            height: 180px;
+            width: 100%;
+            object-fit: cover;
+        }
+
+        .project-content {
+            padding: 20px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .project-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--primary);
+        }
+
+        .project-desc {
+            color: #636e72;
+            margin-bottom: 20px;
+            flex: 1;
+        }
+
+        .project-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .project-btn:hover {
+            background: var(--secondary);
+        }
+
+        /* Support Section */
+        .support-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .support-form .form-group {
+            margin-bottom: 20px;
+        }
+
+        .support-form label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .support-form input,
+        .support-form textarea,
+        .support-form select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .support-form input:focus,
+        .support-form textarea:focus,
+        .support-form select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.2);
+            outline: none;
+        }
+
+        .support-form textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        .submit-btn {
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px auto 0;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3);
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 7px 20px rgba(108, 92, 231, 0.4);
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            width: 100%;
+            background: #f1f2f6;
+            border-radius: 5px;
+            margin: 20px 0;
+            overflow: hidden;
+            display: none;
+        }
+
+        .progress-bar {
+            height: 10px;
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            border-radius: 5px;
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: 280px;
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .menu-toggle {
+                display: block;
+            }
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--dark);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 5px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 1000;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast i {
+            font-size: 1.2rem;
+        }
+
+        .toast.success {
+            background: var(--success);
+        }
+
+        .toast.error {
+            background: var(--danger);
+        }
+
+        .toast.warning {
+            background: var(--warning);
+            color: var(--dark);
+        }
+
+        /* Menu Toggle (Mobile) */
+        .menu-toggle {
+            display: none;
+            background: var(--primary);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            cursor: pointer;
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 101;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Floating Action Button */
+        .fab {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(253, 121, 168, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            z-index: 99;
+        }
+
+        .fab:hover {
+            transform: scale(1.1) rotate(90deg);
+            box-shadow: 0 8px 25px rgba(253, 121, 168, 0.6);
+        }
+    </style>
+</head>
+<body>
+    <!-- Loader -->
+    <div class="loader-container" id="loader">
+        <div class="loader"></div>
+        <img src="https://via.placeholder.com/120x120?text=CROTOLANDIA" alt="Crotolandia Logo" class="loader-logo">
+        <h2 style="color: white;">Cargando la experiencia Crotolandia...</h2>
+        <div class="progress-container" style="width: 50%;">
+            <div class="progress-bar" id="loader-progress"></div>
+        </div>
+    </div>
+
+    <!-- Dashboard Layout -->
+    <div class="dashboard">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <img src="https://via.placeholder.com/40x40?text=CL" alt="Logo" class="sidebar-logo">
+                <h1 class="sidebar-title">Crotolandia</h1>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="#" class="active" data-section="stickers"><i class="fas fa-sticky-note"></i> Stickers</a></li>
+                <li><a href="#" data-section="forum"><i class="fas fa-comments"></i> Foro</a></li>
+                <li><a href="#" data-section="projects"><i class="fas fa-project-diagram"></i> Proyectos</a></li>
+                <li><a href="#" data-section="support"><i class="fas fa-headset"></i> Soporte</a></li>
+            </ul>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content" id="main-content">
+            <div class="header">
+                <h1 id="section-title">Stickers</h1>
+                <div class="user-profile">
+                    <span>Bienvenido, Usuario</span>
+                    <img src="https://via.placeholder.com/40x40?text=U" alt="User" class="user-avatar">
+                </div>
+            </div>
+
+            <!-- Stickers Section -->
+            <section class="content-section active" id="stickers-section">
+                <div class="sticker-container">
+                    <div class="sticker-upload">
+                        <h2><i class="fas fa-upload"></i> Crea tu Sticker</h2>
+                        <div class="upload-area" id="uploadArea">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p>Arrastra y suelta tu imagen aquí</p>
+                            <small>o haz clic para seleccionar un archivo</small>
+                            <input type="file" id="fileInput" accept="image/*" style="display: none;">
+                            <img id="imagePreview" alt="Vista previa">
+                        </div>
+                        <button class="generate-btn" id="generateBtn" disabled>
+                            <i class="fas fa-magic"></i> Generar Sticker
+                        </button>
+                        <div class="progress-container" id="uploadProgress">
+                            <div class="progress-bar" id="uploadProgressBar"></div>
+                        </div>
+                    </div>
+                    <div class="sticker-gallery">
+                        <h2 class="gallery-title"><i class="fas fa-images"></i> Galería de Stickers</h2>
+                        <div class="gallery-grid" id="galleryGrid">
+                            <!-- Stickers will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Forum Section -->
+            <section class="content-section" id="forum-section">
+                <div class="forum-container">
+                    <div class="forum-header">
+                        <img src="https://via.placeholder.com/40x40?text=4CHAN" alt="4chan Logo" class="forum-logo">
+                        <h2 class="forum-title">Foro Crotolandia</h2>
+                    </div>
+                    <div class="forum-nav">
+                        <button class="forum-nav-btn active">Todos</button>
+                        <button class="forum-nav-btn">General</button>
+                        <button class="forum-nav-btn">Proyectos</button>
+                        <button class="forum-nav-btn">Ayuda</button>
+                        <button class="forum-nav-btn">Offtopic</button>
+                    </div>
+                    <div class="thread-list">
+                        <div class="thread">
+                            <h3 class="thread-title"><i class="fas fa-pencil-alt"></i> ¿Cómo crear stickers personalizados?</h3>
+                            <div class="thread-meta">
+                                <span>Publicado por: Anónimo</span>
+                                <span>Hace 2 horas</span>
+                            </div>
+                            <div class="thread-stats">
+                                <span><i class="fas fa-comment"></i> 15</span>
+                                <span><i class="fas fa-eye"></i> 245</span>
+                            </div>
+                        </div>
+                        <div class="thread">
+                            <h3 class="thread-title"><i class="fas fa-pencil-alt"></i> Nuevo proyecto en desarrollo</h3>
+                            <div class="thread-meta">
+                                <span>Publicado por: Admin</span>
+                                <span>Hace 5 horas</span>
+                            </div>
+                            <div class="thread-stats">
+                                <span><i class="fas fa-comment"></i> 32</span>
+                                <span><i class="fas fa-eye"></i> 512</span>
+                            </div>
+                        </div>
+                        <div class="thread">
+                            <h3 class="thread-title"><i class="fas fa-pencil-alt"></i> Problemas con el generador de stickers</h3>
+                            <div class="thread-meta">
+                                <span>Publicado por: Usuario123</span>
+                                <span>Ayer</span>
+                            </div>
+                            <div class="thread-stats">
+                                <span><i class="fas fa-comment"></i> 8</span>
+                                <span><i class="fas fa-eye"></i> 187</span>
+                            </div>
+                        </div>
+                        <div class="thread">
+                            <h3 class="thread-title"><i class="fas fa-pencil-alt"></i> Ideas para nuevos features</h3>
+                            <div class="thread-meta">
+                                <span>Publicado por: Creativo22</span>
+                                <span>Hace 2 días</span>
+                            </div>
+                            <div class="thread-stats">
+                                <span><i class="fas fa-comment"></i> 45</span>
+                                <span><i class="fas fa-eye"></i> 723</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="new-thread-btn">
+                        <i class="fas fa-plus"></i> Nuevo Tema
+                    </button>
+                </div>
+            </section>
+
+            <!-- Projects Section -->
+            <section class="content-section" id="projects-section">
+                <div class="projects-grid">
+                    <div class="project-card">
+                        <img src="https://via.placeholder.com/400x180?text=Proyecto+1" alt="Proyecto 1" class="project-image">
+                        <div class="project-content">
+                            <h3 class="project-title">Generador de Stickers</h3>
+                            <p class="project-desc">Una herramienta para crear stickers personalizados a partir de tus imágenes favoritas.</p>
+                            <a href="#" class="project-btn"><i class="fas fa-external-link-alt"></i> Ver Proyecto</a>
+                        </div>
+                    </div>
+                    <div class="project-card">
+                        <img src="https://via.placeholder.com/400x180?text=Proyecto+2" alt="Proyecto 2" class="project-image">
+                        <div class="project-content">
+                            <h3 class="project-title">Foro Comunitario</h3>
+                            <p class="project-desc">Un espacio para discutir ideas, compartir conocimientos y colaborar en proyectos.</p>
+                            <a href="#" class="project-btn"><i class="fas fa-external-link-alt"></i> Ver Proyecto</a>
+                        </div>
+                    </div>
+                    <div class="project-card">
+                        <img src="https://via.placeholder.com/400x180?text=Proyecto+3" alt="Proyecto 3" class="project-image">
+                        <div class="project-content">
+                            <h3 class="project-title">Gestor de Proyectos</h3>
+                            <p class="project-desc">Organiza y gestiona todos tus proyectos en un solo lugar con herramientas colaborativas.</p>
+                            <a href="#" class="project-btn"><i class="fas fa-external-link-alt"></i> Ver Proyecto</a>
+                        </div>
+                    </div>
+                    <div class="project-card">
+                        <img src="https://via.placeholder.com/400x180?text=Proyecto+4" alt="Proyecto 4" class="project-image">
+                        <div class="project-content">
+                            <h3 class="project-title">Soporte Técnico</h3>
+                            <p class="project-desc">Sistema de tickets para reportar problemas y obtener ayuda del equipo de soporte.</p>
+                            <a href="#" class="project-btn"><i class="fas fa-external-link-alt"></i> Ver Proyecto</a>
+                        </div>
+                    </div>
+                    <div class="project-card">
+                        <img src="https://via.placeholder.com/400x180?text=Proyecto+5" alt="Proyecto 5" class="project-image">
+                        <div class="project-content">
+                            <h3 class="project-title">Galería Comunitaria</h3>
+                            <p class="project-desc">Comparte y descubre stickers creados por otros miembros de la comunidad.</p>
+                            <a href="#" class="project-btn"><i class="fas fa-external-link-alt"></i> Ver Proyecto</a>
+                        </div>
+                    </div>
+                    <div class="project-card">
+                        <img src="https://via.placeholder.com/400x180?text=Proyecto+6" alt="Proyecto 6" class="project-image">
+                        <div class="project-content">
+                            <h3 class="project-title">App Móvil</h3>
+                            <p class="project-desc">Accede a todas las funciones de Crotolandia desde tu dispositivo móvil.</p>
+                            <a href="#" class="project-btn"><i class="fas fa-external-link-alt"></i> Ver Proyecto</a>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Support Section -->
+            <section class="content-section" id="support-section">
+                <div class="support-container">
+                    <h2><i class="fas fa-headset"></i> Soporte Técnico</h2>
+                    <p>¿Necesitas ayuda? Completa el siguiente formulario y nuestro equipo se pondrá en contacto contigo.</p>
+                    
+                    <form class="support-form" id="supportForm">
+                        <div class="form-group">
+                            <label for="name">Nombre</label>
+                            <input type="text" id="name" name="name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Correo Electrónico</label>
+                            <input type="email" id="email" name="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="subject">Asunto</label>
+                            <select id="subject" name="subject" required>
+                                <option value="">Selecciona un asunto</option>
+                                <option value="technical">Problema técnico</option>
+                                <option value="account">Problema con mi cuenta</option>
+                                <option value="suggestion">Sugerencia</option>
+                                <option value="other">Otro</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="message">Mensaje</label>
+                            <textarea id="message" name="message" required></textarea>
+                        </div>
+                        <button type="submit" class="submit-btn">
+                            <i class="fas fa-paper-plane"></i> Enviar Mensaje
+                        </button>
+                    </form>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Floating Action Button -->
+    <button class="fab" id="fab">
+        <i class="fas fa-bolt"></i>
+    </button>
+
+    <!-- Menu Toggle (Mobile) -->
+    <button class="menu-toggle" id="menuToggle">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle"></i>
+        <span id="toast-message">Operación completada con éxito</span>
+  </div>
+
+  <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Simulate loading progress
+            const loader = document.getElementById('loader');
+            const loaderProgress = document.getElementById('loader-progress');
+            const progressContainer = document.querySelector('.loader-container .progress-container');
+            
+            progressContainer.style.display = 'block';
+            
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.random() * 10;
+                if (progress > 100) progress = 100;
+                loaderProgress.style.width = `${progress}%`;
+                
+                if (progress === 100) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        loader.classList.add('hidden');
+                    }, 500);
+                }
+            }, 200);
+
+            // Sidebar navigation
+            const sidebarLinks = document.querySelectorAll('.sidebar-menu a');
+            const contentSections = document.querySelectorAll('.content-section');
+            const sectionTitle = document.getElementById('section-title');
+            
+            sidebarLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Remove active class from all links and sections
+                    sidebarLinks.forEach(l => l.classList.remove('active'));
+                    contentSections.forEach(section => section.classList.remove('active'));
+                    
+                    // Add active class to clicked link
+                    this.classList.add('active');
+                    
+                    // Show corresponding section
+                    const sectionId = this.getAttribute('data-section');
+                    document.getElementById(`${sectionId}-section`).classList.add('active');
+                    
+                    // Update section title
+                    const icon = this.querySelector('i').cloneNode(true);
+                    sectionTitle.innerHTML = '';
+                    sectionTitle.appendChild(icon);
+                    sectionTitle.appendChild(document.createTextNode(this.textContent.trim()));
+                    
+                    // Close sidebar on mobile
+                    if (window.innerWidth <= 768) {
+                        sidebar.classList.remove('active');
+                    }
+                });
+            });
+
+            // Menu toggle for mobile
+            const menuToggle = document.getElementById('menuToggle');
+            const sidebar = document.getElementById('sidebar');
+            
+            menuToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('active');
+            });
+
+            // Sticker generator functionality
+            const uploadArea = document.getElementById('uploadArea');
+            const fileInput = document.getElementById('fileInput');
+            const imagePreview = document.getElementById('imagePreview');
+            const generateBtn = document.getElementById('generateBtn');
+            const uploadProgress = document.getElementById('uploadProgress');
+            const uploadProgressBar = document.getElementById('uploadProgressBar');
+            const galleryGrid = document.getElementById('galleryGrid');
+            
+            // Sample stickers for gallery
+            const sampleStickers = [
+                'https://via.placeholder.com/150?text=Sticker+1',
+                'https://via.placeholder.com/150?text=Sticker+2',
+                'https://via.placeholder.com/150?text=Sticker+3',
+                'https://via.placeholder.com/150?text=Sticker+4',
+                'https://via.placeholder.com/150?text=Sticker+5',
+                'https://via.placeholder.com/150?text=Sticker+6'
+            ];
+            
+            // Load sample stickers
+            sampleStickers.forEach(sticker => {
+                const item = document.createElement('div');
+                item.className = 'gallery-item';
+                item.innerHTML = `<img src="${sticker}" alt="Sticker">`;
+                galleryGrid.appendChild(item);
+            });
+            
+            uploadArea.addEventListener('click', function() {
+                fileInput.click();
+            });
+            
+            uploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.style.borderColor = '#6c5ce7';
+                this.style.backgroundColor = 'rgba(108, 92, 231, 0.1)';
+            });
+            
+            uploadArea.addEventListener('dragleave', function() {
+                this.style.borderColor = '#a29bfe';
+                this.style.backgroundColor = 'transparent';
+            });
+            
+            uploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.style.borderColor = '#a29bfe';
+                this.style.backgroundColor = 'transparent';
+                
+                if (e.dataTransfer.files.length) {
+                    fileInput.files = e.dataTransfer.files;
+                    handleFileSelect(e.dataTransfer.files[0]);
+                }
+            });
+            
+            fileInput.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    handleFileSelect(this.files[0]);
+                }
+            });
+            
+            function handleFileSelect(file) {
+                if (!file.type.match('image.*')) {
+                    showToast('Por favor selecciona una imagen válida', 'error');
+                    return;
+                }
+                
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    imagePreview.src = e.target.result;
+                    imagePreview.style.display = 'block';
+                    generateBtn.disabled = false;
+                    
+                    // Hide upload icon and text
+                    uploadArea.querySelector('i').style.display = 'none';
+                    uploadArea.querySelector('p').style.display = 'none';
+                    uploadArea.querySelector('small').style.display = 'none';
+                };
+                
+                reader.readAsDataURL(file);
+            }
+            
+            generateBtn.addEventListener('click', function() {
+                if (!fileInput.files.length) return;
+                
+                // Simulate upload progress
+                uploadProgress.style.display = 'block';
+                let progress = 0;
+                const progressInterval = setInterval(() => {
+                    progress += 5;
+                    uploadProgressBar.style.width = `${progress}%`;
+                    
+                    if (progress >= 100) {
+                        clearInterval(progressInterval);
+                        setTimeout(() => {
+                            // Send to WhatsApp
+                            const message = '¡Mira el sticker que creé en Crotolandia!';
+                            const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+                            
+                            // In a real app, you would upload the image and share the URL
+                            window.open(whatsappUrl, '_blank');
+                            
+                            // Add to gallery
+                            const newSticker = document.createElement('div');
+                            newSticker.className = 'gallery-item';
+                            newSticker.innerHTML = `<img src="${imagePreview.src}" alt="Nuevo Sticker">`;
+                            galleryGrid.prepend(newSticker);
+                            
+                            // Reset form
+                            imagePreview.style.display = 'none';
+                            generateBtn.disabled = true;
+                            uploadProgress.style.display = 'none';
+                            uploadProgressBar.style.width = '0%';
+                            fileInput.value = '';
+                            
+                            // Show upload icon and text again
+                            uploadArea.querySelector('i').style.display = 'block';
+                            uploadArea.querySelector('p').style.display = 'block';
+                            uploadArea.querySelector('small').style.display = 'block';
+                            
+                            showToast('Sticker generado y compartido con éxito');
+                        }, 500);
+                    }
+                }, 100);
+            });
+            
+            // Support form submission
+            const supportForm = document.getElementById('supportForm');
+            
+            supportForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // In a real app, you would send this data to your server
+                const formData = {
+                    name: this.name.value,
+                    email: this.email.value,
+                    subject: this.subject.value,
+                    message: this.message.value
+                };
+                
+                // Simulate form submission
+                setTimeout(() => {
+                    this.reset();
+                    showToast('Tu mensaje ha sido enviado a kaitonekox@outlook.com');
+                }, 1500);
+            });
+            
+            // Forum functionality
+            const forumNavBtns = document.querySelectorAll('.forum-nav-btn');
+            
+            forumNavBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    forumNavBtns.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    // In a real app, you would filter threads here
+                });
+            });
+            
+            // FAB functionality
+            const fab = document.getElementById('fab');
+            
+            fab.addEventListener('click', function() {
+                showToast('¡Acción rápida activada!', 'success');
+            });
+            
+            // Toast notification function
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+            
+            function showToast(message, type = 'success') {
+                toast.className = 'toast';
+                toast.classList.add(type);
+                toast.classList.add('show');
+                toastMessage.textContent = message;
+                
+                // Change icon based on type
+                const icon = toast.querySelector('i');
+                icon.className = 'fas ' + 
+                    (type === 'success' ? 'fa-check-circle' : 
+                     type === 'error' ? 'fa-times-circle' : 
+                     type === 'warning' ? 'fa-exclamation-circle' : 'fa-info-circle');
+                
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 3000);
+            }
+            
+            // Responsive check
+            function checkResponsive() {
+                if (window.innerWidth <= 768) {
+                    menuToggle.style.display = 'block';
+                } else {
+                    menuToggle.style.display = 'none';
+                    sidebar.classList.remove('active');
+                }
+            }
+            
+            window.addEventListener('resize', checkResponsive);
+            checkResponsive();
+        });
+    </script>
+</body>
+</html>
